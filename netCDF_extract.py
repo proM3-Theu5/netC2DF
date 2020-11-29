@@ -46,6 +46,7 @@ variables_df = pd.DataFrame(columns = ['Variable','Type','Dimensions'], data = z
 variables_df['Dims_str'] = variables_df['Dimensions'].astype('str')
 variables_df['Dims_len'] = variables_df['Dimensions'].apply(lambda x: len(x))
 
+
 # Getting variables with 2 dimesions
 var_2d_dim = list(variables_df[variables_df['Dims_len'] == 2]['Variable'])
 
