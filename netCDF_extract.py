@@ -46,26 +46,6 @@ variables_df = pd.DataFrame(columns = ['Variable','Type','Dimensions'], data = z
 variables_df['Dims_str'] = variables_df['Dimensions'].astype('str')
 variables_df['Dims_len'] = variables_df['Dimensions'].apply(lambda x: len(x))
 
-# Getting the variable with dimensions 1
-
-var_x_dim = list(variables_df[variables_df['Dims_str'] == "('x',)"]['Variable'])
-var_y_dim = list(variables_df[variables_df['Dims_str'] == "('y',)"]['Variable'])
-var_z_dim = list(variables_df[variables_df['Dims_str'] == "('z',)"]['Variable'])
-
-# Generating dataframe for single dimensions
-x_var_df = pd.DataFrame()
-y_var_df = pd.DataFrame()
-z_var_df = pd.DataFrame()
-
-for x_var in var_x_dim:
-    x_var_df[x_var] = ma.getdata(nc_f.variables[x_var][:])
-
-for y_var in var_y_dim:
-    y_var_df[y_var] = ma.getdata(nc_f.variables[y_var][:])
-
-for z_var in var_z_dim:
-    z_var_df[z_var] = ma.getdata(nc_f.variables[z_var][:])
-
 # Getting variables with 2 dimesions
 var_2d_dim = list(variables_df[variables_df['Dims_len'] == 2]['Variable'])
 
@@ -78,3 +58,52 @@ for var_2d in var_2d_dim:
     temp_df.columns = [str(col_pref) + str(col) for col in temp_df.columns]
     temp_df.set_index(str(row_pref) + temp_df.index.astype(str))
     var_2d_df_dict[var_2d] = temp_df
+
+# Getting variables with 3 Dimensions
+var_3d_dim = list(variables_df[variables_df['Dims_len'] == 3]['Variable'])
+
+# Generating dataframes for 3d variables
+var_3d_df_dict = {}
+for var_3d in var_3d_dim:
+    # Getting the array out
+    array_3d = ma.getdata(nc_f.variables[var_3d][:,:,:])
+    dim_1_size,dim_2_size,dim_3_size = array_3d.shape
+    dim_1_name,dim_2_name,dim_3_name = variables_df[variables_df['Variable'] == var_3d]['Dimensions'].values[0]
+    reshape_tuple = array_3d.shape[1:3]
+    # Generating datasets by keeping 1st dim as constant
+    df_3d_dict = {}
+    for dim_1_ix in range(dim_1_size):
+        temp_df = pd.DataFrame(data = ma.getdata(nc_f.variables[var_3d][dim_1_ix:dim_1_ix+1,:,:].reshape(reshape_tuple)))
+        temp_df.insert(0,dim_2_name,temp_df.index) 
+        temp_df[dim_2_name] = dim_2_name+'_'+temp_df[dim_2_name].astype('str')
+        temp_df.insert(0,dim_1_name,dim_1_name+'_'+str(dim_1_ix))
+        df_3d_dict[str(dim_1_ix)] = temp_df
+    # Merging the dataframe together
+    df_list = [df_3d_dict[key] for key in df_3d_dict]
+    df_3d_var = pd.concat(df_list, ignore_index=True)
+    var_3d_df_dict[var_3d] = df_3d_var
+
+
+# Getting the variables with 1 dimension
+var_1d_dim = list(variables_df[variables_df['Dims_len'] == 1]['Variable'])
+
+# Generating the single dimension names for these variables
+variables_1d_df = variables_df[variables_df['Dims_len'] == 1]
+variables_1d_df['Dimension_1d'] = [dim[0] for dim in variables_1d_df['Dimensions']]
+variables_1d_df['Dimension_1d'] = variables_1d_df['Dimension_1d'].astype('str')
+
+# Getting the unique 1d dimesion values
+var_1d_dims = variables_1d_df['Dimension_1d'].unique()
+
+# Getting the variables for each dimensions
+var_v_dim_dict = {}
+for dim in var_1d_dims:
+    var_v_dim_dict[dim] = list(variables_1d_df[variables_1d_df['Dimension_1d'] == dim]['Variable'])
+
+# Getting dataframes for 1d variables
+var_1d_df_dict = {}
+for dim in var_v_dim_dict:
+    temp_df = pd.DataFrame()
+    for var in var_v_dim_dict[dim]:
+        temp_df[var] = ma.getdata(nc_f.variables[var][:])
+    var_1d_df_dict[dim] = temp_df
