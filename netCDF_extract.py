@@ -43,9 +43,10 @@ nc_types = [nc_f.variables[var].dtype for var in nc_vars]
 
 # Generating the dataframe for Variables
 variables_df = pd.DataFrame(columns = ['Variable','Type','Dimensions'], data = zip(nc_vars,nc_types,nc_dims))
-
-# Getting the variable with dimensions x
 variables_df['Dims_str'] = variables_df['Dimensions'].astype('str')
+variables_df['Dims_len'] = variables_df['Dimensions'].apply(lambda x: len(x))
+
+# Getting the variable with dimensions 1
 
 var_x_dim = list(variables_df[variables_df['Dims_str'] == "('x',)"]['Variable'])
 var_y_dim = list(variables_df[variables_df['Dims_str'] == "('y',)"]['Variable'])
@@ -64,3 +65,16 @@ for y_var in var_y_dim:
 
 for z_var in var_z_dim:
     z_var_df[z_var] = ma.getdata(nc_f.variables[z_var][:])
+
+# Getting variables with 2 dimesions
+var_2d_dim = list(variables_df[variables_df['Dims_len'] == 2]['Variable'])
+
+# Generating dataframe for 2 d variables
+var_2d_df_dict = {}
+for var_2d in var_2d_dim:
+    row_pref = variables_df[variables_df['Variable'] == var_2d]['Dimensions'].values[0][0]
+    col_pref = variables_df[variables_df['Variable'] == var_2d]['Dimensions'].values[0][0]
+    temp_df = pd.DataFrame(data = ma.getdata(nc_f.variables[var_2d][:,:]))
+    temp_df.columns = [str(col_pref) + str(col) for col in temp_df.columns]
+    temp_df.set_index(str(row_pref) + temp_df.index.astype(str))
+    var_2d_df_dict[var_2d] = temp_df
