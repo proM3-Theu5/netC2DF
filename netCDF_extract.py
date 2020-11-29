@@ -63,4 +63,4 @@ for y_var in var_y_dim:
     y_var_df[y_var] = ma.getdata(nc_f.variables[y_var][:])
 
 for z_var in var_z_dim:
-    z_var_df[x_var] = ma.getdata(nc_f.variables[z_var][:])
+    z_var_df[z_var] = ma.getdata(nc_f.variables[z_var][:])
